@@ -3,39 +3,14 @@
 
 
 
-## VACCUM を高速化する
+## VACCUM の高速化
 
-#### BOOST オプション
+- [BOOST オプション](https://docs.aws.amazon.com/ja_jp/redshift/latest/dg/r_VACUUM_command.html): VACUUM で使用するメモリやストレージなどを使うリソースを増やして高速化する。実行中の他のクエリへの性能影響が出ても問題なければ利用してよい。BOOST オプションはテーブル単位での VACUUM でしか利用できない。例）`vacuum full schema1.table1 boost;` 
 
-VACUUM で使用するメモリやストレージなどを使うリソースを増やす。他のクエリへの性能影響が問題なければ、BOOST をつける。
-
-```
-vacuum full schema1.table1 boost;
-```
-
->Runs the VACUUM command with additional resources, such as memory and disk space, as they're available. With the BOOST option, VACUUM operates in one window and blocks concurrent deletes and updates for the duration of the VACUUM operation. Running with the BOOST option contends for system resources, which might affect query performance. Run the VACUUM BOOST when the load on the system is light, such as during maintenance operations.
->
->Consider the following when using the BOOST option:
->
->- When BOOST is specified, the table_name value is required.
->- BOOST isn't supported with REINDEX.
->- BOOST is ignored with DELETE ONLY.
-> <cite>[VACUUM](https://docs.aws.amazon.com/ja_jp/redshift/latest/dg/r_VACUUM_command.html)
-
-#### CTAS
-
-ただし、CTAS では元テーブルと作成先のテーブルの圧縮エンコーディングが変わる。例えば、元テーブルでは encoding=zstd だったカラムが lzo になったりする。CREATE TABLE で元テーブルと同定義で空テーブルを作り、INSERT SELECT すると同じ定義にすることができる。
-
-```
-CREATE TABLE schema1.table2 
-DISTSTYLE EVEN 
-SORTKEY ( col1, col2 )
-AS 
-SELECT * FROM schema1.table1;
-```
-
-#### INSERT SELECT
-日付列があるようなテーブルは insert ... select で部分的にソートして分割コミットすることができる
+- [ディープコピー](https://docs.aws.amazon.com/ja_jp/redshift/latest/dg/performing-a-deep-copy.html): `CREATE TABLE ... AS (CTAS)` は元テーブルの圧縮エンコーディングが引継がれないため、以下の方法でディープコピーを行う。日付列があるようなテーブルは insert ... select で部分的にソートして分割コミットすることができる
+	- CREATE TABLE 後、INSERT SELECT
+	- CREATE TABLE LIKE、INSERT SELECT
+	- 一時テーブルに CTAS、元テーブルの全データ削除、元テーブルに SELECT INSERT
 
 ## 運用
 
